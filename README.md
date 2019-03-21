@@ -25,7 +25,8 @@ $ node index.js gas-advanced-service-definition-for-autocomplete.json
 
 # Support
 
-- [Admin Directory API](https://developers.google.com/admin-sdk/directory/v1/reference/)
+- [Admin Directory API v1](https://developers.google.com/admin-sdk/directory/v1/reference/)
+- [Calendar API v3](https://developers.google.com/calendar/v3/reference/)
 
 # License
 
