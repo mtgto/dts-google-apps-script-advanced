@@ -60,8 +60,8 @@ class Interface {
     const indent = " ".repeat(depth * 2);
     console.log(`${indent}export interface ${this.name} {`);
     this.fields.forEach(field => {
-      let type: string = this.normalizeTypeName(field["2"]);
-      console.log(`  ${indent}${field["1"]}: ${type};`)
+      let type: string = normalizeTypeName(field["2"]);
+      console.log(`  ${indent}${field["1"]}?: ${type};`)
     })
     this.methods.forEach(method => {
       method["6"].split("\n").forEach(comment => {
@@ -73,35 +73,39 @@ class Interface {
       if (Array.isArray(method["3"])) {
         // has arguments
         const args: string[] = method["3"].map(arg => {
-          let type: string = this.normalizeTypeName(arg["2"]);
+          let type: string = normalizeTypeName(arg["2"]);
           return `${arg["1"]}: ${type}`;
         });
         line = line + args.join(", ");
       }
-      line = line + `): ${method["2"]};`
+      const type = normalizeTypeName(method["2"]);
+      line = line + `): ${type};`
       console.log(line);
     })
     console.log(`${indent}}`);
   }
+}
 
-  normalizeTypeName(type: string): string {
-    if (type === "Integer") {
-      return "number";
-    } else if (type === "Integer[]") {
-      return "number[]";
-    } else if (type === "Byte[]") {
-      return "string";
-    } else if (type === "String") {
-      return "string";
-    } else if (type === "Object") {
-      return "object";
-    }
-    return type;
+const normalizeTypeName = (type: string): string => {
+  if (type === "Integer") {
+    return "number";
+  } else if (type === "Integer[]") {
+    return "number[]";
+  } else if (type === "Byte[]") {
+    return "string";
+  } else if (type === "String") {
+    return "string";
+  } else if (type === "Object") {
+    return "object";
   }
+  return type
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/34073#discussion_r267847474
+    .replace("Calendar.V3.", "")
+    .replace("Admin.Directory_v1.", "");
 }
 
 const convert = (obj: object): Interface => {
-  const name = obj["1"];
+  const name = normalizeTypeName(obj["1"]);
   const fields: object[] = obj["2"] || [];
   const methods: object[] = obj["3"] || [];
   return new Interface("GoogleAppsScript." + name, fields, methods);
