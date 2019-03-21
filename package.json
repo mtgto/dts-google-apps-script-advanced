@@ -1,0 +1,10 @@
+{
+  "name": "dts-google-apps-script-advanced",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "mtgto <hogerappa@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^11.11.4"
+  }
+}
