@@ -9,7 +9,7 @@ Inspire from [motemen/dts-google-apps-script](https://github.com/motemen/dts-goo
 
 Require `node.js` and `TypeScript`.
 
-You need to download 
+You need to download JSON file for autocomplete.
 
 ```console
 $ tsc index.ts
