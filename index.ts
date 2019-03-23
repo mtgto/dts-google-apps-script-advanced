@@ -95,6 +95,10 @@ const normalizeTypeName = (type: string): string => {
     return "string";
   } else if (type === "String") {
     return "string";
+  } else if (type === "String[]") {
+    return "string[]";
+  } else if (type === "Boolean") {
+    return "boolean";
   } else if (type === "Object") {
     return "object";
   }
