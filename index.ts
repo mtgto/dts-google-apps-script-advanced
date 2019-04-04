@@ -105,10 +105,42 @@ const normalizeTypeName = (type: string): string => {
     // Bugs in classroom_v1, peopleapi_v1
     return "void";
   }
+  /**
+   * Generate by
+   * $ ls * | xargs -n1 jq '.["1"]["2"][0]["2"]' | ruby -ne 'puts ".replace(\"%s.%s.\", \"\")" % $_.split(".")[1..2]'
+   */
   return type
     // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/34073#discussion_r267847474
+    .replace("Adsense.V1_4.", "")
+    .replace("Analytics.V3.", "")
+    .replace("Analyticsreporting.V4.", "")
+    .replace("Appsactivity.V1.", "")
+    .replace("Bigquery.V2.", "")
     .replace("Calendar.V3.", "")
-    .replace("Admin.Directory_v1.", "");
+    .replace("Classroom.V1.", "")
+    .replace("Content.V2.", "")
+    .replace("Dfareporting.V3_3.", "")
+    .replace("Admin.Directory_v1.", "")
+    .replace("Docs.V1.", "")
+    .replace("Drive.V2.", "")
+    .replace("Driveactivity.V2.", "")
+    .replace("Fusiontables.V2.", "")
+    .replace("Gmail.V1.", "")
+    .replace("Groupsmigration.V1.", "")
+    .replace("Groupssettings.V1.", "")
+    .replace("Licensing.V1.", "")
+    .replace("Mirror.V1.", "")
+    .replace("Peopleapi.V1.", "")
+    .replace("Admin.Reports_v1.", "")
+    .replace("Reseller.V1.", "")
+    .replace("Sheets.V4.", "")
+    .replace("Slides.V1.", "")
+    .replace("Tagmanager.V2.", "")
+    .replace("Tasks.V1.", "")
+    .replace("Urlshortener.V1.", "")
+    .replace("Youtube.V3.", "")
+    .replace("YoutubeAnalytics.V2.", "")
+    .replace("YoutubePartner.V1.", "");
 }
 
 const convert = (obj: object): Interface => {
