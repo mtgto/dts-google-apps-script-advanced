@@ -101,6 +101,9 @@ const normalizeTypeName = (type: string): string => {
     return "boolean";
   } else if (type === "Object") {
     return "object";
+  } else if (type === "Peopleapi.V1.Schema.Empty" || type === "Classroom.V1.Schema.Empty") {
+    // Bugs in classroom_v1, peopleapi_v1
+    return "void";
   }
   return type
     // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/34073#discussion_r267847474
