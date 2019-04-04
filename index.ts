@@ -60,8 +60,9 @@ class Interface {
     const indent = " ".repeat(depth * 2);
     console.log(`${indent}export interface ${this.name} {`);
     this.fields.forEach(field => {
+      let fieldName: string = normalizeVarName(field["1"]);
       let type: string = normalizeTypeName(field["2"]);
-      console.log(`  ${indent}${field["1"]}?: ${type};`)
+      console.log(`  ${indent}${fieldName}?: ${type};`)
     })
     this.methods.forEach(method => {
       method["6"].split("\n").forEach(comment => {
@@ -73,8 +74,9 @@ class Interface {
       if (Array.isArray(method["3"])) {
         // has arguments
         const args: string[] = method["3"].map(arg => {
-          let type: string = normalizeTypeName(arg["2"]);
-          return `${arg["1"]}: ${type}`;
+          const argName = normalizeVarName(arg["1"]);
+          const type: string = normalizeTypeName(arg["2"]);
+          return `${argName}: ${type}`;
         });
         line = line + args.join(", ");
       }
@@ -84,6 +86,10 @@ class Interface {
     })
     console.log(`${indent}}`);
   }
+}
+
+const normalizeVarName = (varName: string): string => {
+  return varName.replace(/(\w+)-(\w)(\w+)/, (match, former, char, latter) => former + char.toUpperCase() + latter);
 }
 
 const normalizeTypeName = (type: string): string => {
@@ -107,10 +113,12 @@ const normalizeTypeName = (type: string): string => {
   }
   /**
    * Generate by
-   * $ ls * | xargs -n1 jq '.["1"]["2"][0]["2"]' | ruby -ne 'puts ".replace(\"%s.%s.\", \"\")" % $_.split(".")[1..2]'
+   * 
    */
   return type
     // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/34073#discussion_r267847474
+    // $ cd https://github.com/grant/google-apps-script-dts/tree/master/data_3
+    // $ ls * | xargs -n1 jq '.["1"]["2"][0]["2"]' | ruby -ne 'puts ".replace(\"%s.%s.\", \"\")" % $_.split(".")[1..2]'
     .replace("Adsense.V1_4.", "")
     .replace("Analytics.V3.", "")
     .replace("Analyticsreporting.V4.", "")
