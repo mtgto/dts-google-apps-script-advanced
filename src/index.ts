@@ -2,6 +2,11 @@ import { program } from "commander";
 import { download } from "./download";
 import { parse } from "./parser";
 
+if (process.env.NODE_ENV === "development") {
+  const sourceMapSupport = require("source-map-support");
+  sourceMapSupport.install();
+}
+
 program.name("dts-google-apps-script-advanced");
 
 program

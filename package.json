@@ -5,13 +5,14 @@
   "author": "mtgto <hogerappa@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node14 --outfile=index.js",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node14 --outfile=index.js --define:process.env.NODE_ENV=\\\"development\\\" --sourcemap=inline",
     "watch": "yarn run build --watch",
     "lint": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^14.14.25",
     "esbuild": "^0.8.44",
+    "source-map-support": "^0.5.19",
     "typescript": "^4.1.5"
   },
   "dependencies": {
