@@ -5,6 +5,6 @@
   "author": "mtgto <hogerappa@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^11.11.4"
+    "@types/node": "^14.14.25"
   }
 }
