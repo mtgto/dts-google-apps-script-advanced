@@ -57,13 +57,13 @@ class Interface {
   readonly package: ReadonlyArray<string>;
   readonly fields: ReadonlyArray<Field>;
   readonly methods: ReadonlyArray<Method>;
-  readonly comment: string | undefined;
+  readonly comment: Comment | undefined;
 
   constructor(
     fullname: string,
     fields: Field[],
     methods: Method[],
-    comment: string | undefined
+    comment: Comment | undefined
   ) {
     this.package = fullname.split(".");
     this.fields = fields;
@@ -79,7 +79,7 @@ class Interface {
     const indent = "  ".repeat(depth);
     let output = "";
     if (this.comment) {
-      output += indent + "// " + this.comment + "\n";
+      output += this.comment.toString(depth);
     }
     output += indent + "export interface " + this.name + " {\n";
     this.fields.forEach((field) => {
@@ -97,13 +97,13 @@ class Method {
   readonly name: string;
   readonly returnTypeName: string;
   readonly args: Field[];
-  readonly comment: string | undefined;
+  readonly comment: Comment | undefined;
 
   constructor(
     name: string,
     returnTypeName: string,
     args: Field[],
-    comment: string | undefined
+    comment: Comment | undefined
   ) {
     this.name = name;
     this.returnTypeName = returnTypeName;
@@ -115,7 +115,7 @@ class Method {
     const indent = "  ".repeat(depth);
     let output = "";
     if (this.comment) {
-      output += indent + "// " + this.comment + "\n";
+      output += this.comment.toString(depth);
     }
     output += indent + this.name + "(";
     output += this.args.map((arg) => `${arg.name}: ${arg.typeName}`).join(", ");
@@ -127,9 +127,9 @@ class Method {
 class Field {
   readonly name: string;
   readonly typeName: string;
-  readonly comment: string | undefined;
+  readonly comment: Comment | undefined;
 
-  constructor(name: string, typeName: string, comment: string | undefined) {
+  constructor(name: string, typeName: string, comment: Comment | undefined) {
     this.name = name;
     this.typeName = typeName;
     this.comment = comment;
@@ -139,10 +139,25 @@ class Field {
     const indent = "  ".repeat(depth);
     let output = "";
     if (this.comment) {
-      output += indent + "// " + this.comment + "\n";
+      output += this.comment.toString(depth);
     }
     output += indent + this.name + "?: " + this.typeName + ";\n";
     return output;
+  };
+}
+
+class Comment {
+  readonly comment: string;
+
+  constructor(comment: string) {
+    this.comment = comment;
+  }
+
+  toString = (depth: number): string => {
+    return this.comment
+      .split("\n")
+      .map((line) => "  ".repeat(depth) + "// " + line + "\n")
+      .join("");
   };
 }
 
@@ -201,7 +216,7 @@ const parseHierarchy = (obj: Dict): Interface => {
     (field: Dict): Field => {
       const name = normalizeVariableName(field["1"]);
       const typeName = normalizeTypeName(field["2"]);
-      const comment = field["6"];
+      const comment = field["6"] ? new Comment(field["6"]) : undefined;
       return new Field(name, typeName, comment);
     }
   );
@@ -212,14 +227,14 @@ const parseHierarchy = (obj: Dict): Interface => {
       const args = (method["3"] ?? []).map((field: Dict) => {
         const name = normalizeVariableName(field["1"]);
         const typeName = normalizeTypeName(field["2"]);
-        const comment = field["6"];
+        const comment = field["6"] ? new Comment(field["6"]) : undefined;
         return new Field(name, typeName, comment);
       });
-      const comment = method["6"];
+      const comment = method["6"] ? new Comment(method["6"]) : undefined;
       return new Method(name, returnTypeName, args, comment);
     }
   );
-  const comment = obj["6"];
+  const comment = obj["6"] ? new Comment(obj["6"]) : undefined;
   return new Interface(`GoogleAppsScript.${name}`, fields, methods, comment);
 };
 
