@@ -1,11 +1,17 @@
 {
   "name": "dts-google-apps-script-advanced",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "mtgto <hogerappa@gmail.com>",
   "license": "MIT",
+  "bin": {
+    "dts-google-apps-script-advanced": "./dist/index.js"
+  },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node14 --outfile=index.js --define:process.env.NODE_ENV=\\\"development\\\" --sourcemap=inline",
+    "build": "yarn run build:dev",
+    "build:dev": "yarn run build:base --define:process.env.NODE_ENV=\\\"development\\\"",
+    "build:prod": "yarn run build:base --define:process.env.NODE_ENV=\\\"production\\\"",
+    "build:base": "esbuild src/index.ts --bundle --platform=node --target=node14 --outdir=./dist --sourcemap=external",
     "watch": "yarn run build --watch",
     "lint": "tsc --noEmit"
   },
@@ -18,5 +24,8 @@
   },
   "dependencies": {
     "commander": "^7.0.0"
+  },
+  "prettier": {
+    "printWidth": 120
   }
 }

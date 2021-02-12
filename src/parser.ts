@@ -1,4 +1,5 @@
 import { readFile } from "fs/promises";
+import { definitions } from "./api";
 
 type Dict = { [key: string]: any };
 
@@ -59,12 +60,7 @@ class Interface {
   readonly methods: ReadonlyArray<Method>;
   readonly comment: Comment | undefined;
 
-  constructor(
-    fullname: string,
-    fields: Field[],
-    methods: Method[],
-    comment: Comment | undefined
-  ) {
+  constructor(fullname: string, fields: Field[], methods: Method[], comment: Comment | undefined) {
     this.package = fullname.split(".");
     this.fields = fields;
     this.methods = methods;
@@ -81,7 +77,7 @@ class Interface {
     if (this.comment) {
       output += this.comment.toString(depth);
     }
-    output += indent + "export interface " + this.name + " {\n";
+    output += indent + "interface " + this.name + " {\n";
     this.fields.forEach((field) => {
       output += field.toString(depth + 1);
     });
@@ -99,12 +95,7 @@ class Method {
   readonly args: Field[];
   readonly comment: Comment | undefined;
 
-  constructor(
-    name: string,
-    returnTypeName: string,
-    args: Field[],
-    comment: Comment | undefined
-  ) {
+  constructor(name: string, returnTypeName: string, args: Field[], comment: Comment | undefined) {
     this.name = name;
     this.returnTypeName = returnTypeName;
     this.args = args;
@@ -156,31 +147,76 @@ class Comment {
   toString = (depth: number): string => {
     return this.comment
       .split("\n")
-      .map((line) => "  ".repeat(depth) + "// " + line + "\n")
+      .map((line) => line.length > 100 && line.includes(". ") ? line.replace(". ", ".\n").split("\n") : line)
+      .flat()
+      .map((line) => "  ".repeat(depth) + "// " + line.trimEnd() + "\n")
       .join("");
   };
 }
 
 const normalizeVariableName = (varName: string): string => {
-  return varName.replace(
-    /(\w+)-(\w)(\w+)/,
-    (match, former, char, latter) => former + char.toUpperCase() + latter
-  );
-};
-
-// Convert to real package name not in json.
-const convertPackageMap: { [old: string]: string } = {
-  Adsense_v1_4: "AdSense",
-  Admin_directory_v1: "AdminDirectory",
-  Groupsmigration_v1: "AdminGroupsMigration",
+  return varName.replace(/(\w+)-(\w)(\w+)/, (_match, former, char, latter) => former + char.toUpperCase() + latter);
 };
 
 const validTypeNames = ["Blob", "void"];
+
+// Unknown types which defined in automatic macros
+const unknownTypeNames: { [unknownName: string]: string } = {
+  "Area120tables.V1alpha1.Schema.Empty": "any",
+  "Bigquery.V2.Schema.JsonObject": "any",
+  "Classroom.V1.Schema.Empty": "void",
+  "Classroom.V1.Schema.ReclaimStudentSubmissionRequest": "any",
+  "Docs.V1.Schema.EmbeddedDrawingProperties": "any",
+  "Driveactivity.V2.Schema.Edit": "any",
+  "Driveactivity.V2.Schema.Administrator": "any",
+  "Driveactivity.V2.Schema.AnonymousUser": "any",
+  "Driveactivity.V2.Schema.Legacy": "any",
+  "Driveactivity.V2.Schema.NoConsolidation": "any",
+  "Driveactivity.V2.Schema.New": "any",
+  "Driveactivity.V2.Schema.Upload": "any",
+  "Driveactivity.V2.Schema.DriveFile": "any",
+  "Driveactivity.V2.Schema.File": "any",
+  "Driveactivity.V2.Schema.Anyone": "any",
+  "Licensing.V1.Schema.Empty": "void",
+  "Peopleapi.V1.Schema.Empty": "void",
+  "Sheets.V4.Schema.ClearValuesRequest": "any",
+  "Youtube.V3.Schema.TokenPagination": "any",
+  "Youtube.V3.Schema.TestItemTestItemSnippet": "any",
+  "Youtube.V3.Schema.VideoProjectDetails": "any",
+  "YoutubePartner.V1.Schema.Empty": "void",
+};
+
+/**
+ * Convert package name from autocomplete macros format.
+ *
+ * Example:
+ * "Admin_directory_v1.Admin.Directory_v1.Collection" => "AdminDirectory.Collection"
+ * "Admin.Directory_v1.Schema.Channel" => "Schema.Channel"
+ */
+const normalizePackageName = (packageName: string): string | undefined => {
+  for (const definition of definitions) {
+    if (packageName === definition.innerName) {
+      return definition.id;
+    } else {
+      const word = `${definition.innerName}.${definition.abbreviatedName}`;
+      if (packageName.startsWith(word)) {
+        return packageName.replace(word, `GoogleAppsScript.${definition.id}.`);
+      } else if (packageName.startsWith(definition.abbreviatedName)) {
+        return packageName.replace(definition.abbreviatedName, "");
+      }
+    }
+  }
+  return undefined;
+};
 
 const normalizeTypeName = (typeName: string): string => {
   if (typeName === "Integer") {
     return "number";
   } else if (typeName === "Integer[]") {
+    return "number[]";
+  } else if (typeName === "Number") {
+    return "number";
+  } else if (typeName === "Number[]") {
     return "number[]";
   } else if (typeName === "String") {
     return "string";
@@ -188,33 +224,42 @@ const normalizeTypeName = (typeName: string): string => {
     return "string[]";
   } else if (typeName === "String[][]") {
     return "string[][]";
+  } else if (typeName === "Byte[]") {
+    return "string";
   } else if (typeName === "Boolean") {
     return "boolean";
+  } else if (typeName === "Boolean[]") {
+    return "boolean[]";
   } else if (typeName === "Object") {
     return "object";
+  } else if (typeName === "Object[]") {
+    return "object[]";
+  } else if (typeName === "Object[][]") {
+    return "object[][]";
   } else if (validTypeNames.includes(typeName)) {
     return typeName;
-  } else if (convertPackageMap[typeName]) {
-    return convertPackageMap[typeName];
-  }
-  const match = /^([^.]+)\.(\w+\.\w+)\.(.+)$/.exec(typeName);
-  if (match) {
-    let packageName = convertPackageMap[match[1]];
-    if (!packageName) {
-      throw new Error(`${match[1]} is not registered in package names`);
-    }
-    typeName = packageName + "." + match[3];
   } else {
-    console.error(`[ERROR] Unsupported typeName: ${typeName}`);
+    const converted = unknownTypeNames[typeName];
+    if (converted) {
+      return converted;
+    }
   }
-  return typeName;
+  const normalizedName = normalizePackageName(typeName);
+  if (normalizedName) {
+    return normalizedName;
+  } else {
+    throw new Error(`${typeName} is not registered in package names`);
+  }
 };
 
 const parseHierarchy = (obj: Dict): Interface => {
   const name = normalizeTypeName(obj["1"]);
   const fields: Field[] = (obj["2"] ?? []).map(
     (field: Dict): Field => {
-      const name = normalizeVariableName(field["1"]);
+      let name: string = field["1"];
+      if (name.includes("-")) {
+        name = `"${name}"`;
+      }
       const typeName = normalizeTypeName(field["2"]);
       const comment = field["6"] ? new Comment(field["6"]) : undefined;
       return new Field(name, typeName, comment);
@@ -238,7 +283,7 @@ const parseHierarchy = (obj: Dict): Interface => {
   return new Interface(`GoogleAppsScript.${name}`, fields, methods, comment);
 };
 
-export const parse = async (filename: string) => {
+export const parse = async (filename: string): Promise<string> => {
   const json = await readFile(filename);
   const dict: Dict = JSON.parse(json.toString());
   const root = new Namespace("GoogleAppsScript");
@@ -249,6 +294,8 @@ export const parse = async (filename: string) => {
   dict["2"].forEach((cls: Dict) => {
     root.add(parseHierarchy(cls));
   });
-  console.log(root.toString(0));
-  console.log(`declare const ${main.name}: GoogleAppsScript.${main.name};`);
+
+  let output = root.toString(0);
+  output += `declare const ${main.name}: GoogleAppsScript.${main.name};\n`;
+  return output;
 };
