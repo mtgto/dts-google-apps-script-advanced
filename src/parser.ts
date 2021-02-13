@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import { definitions } from "./api";
+import wordwrap from "word-wrap";
 
 type Dict = { [key: string]: any };
 
@@ -145,10 +146,8 @@ class Comment {
   }
 
   toString = (depth: number): string => {
-    return this.comment
+    return wordwrap(this.comment, { indent: "", width: 120 })
       .split("\n")
-      .map((line) => line.length > 100 && line.includes(". ") ? line.replace(". ", ".\n").split("\n") : line)
-      .flat()
       .map((line) => "  ".repeat(depth) + "// " + line.trimEnd() + "\n")
       .join("");
   };
@@ -200,7 +199,7 @@ const normalizePackageName = (packageName: string): string | undefined => {
     } else {
       const word = `${definition.innerName}.${definition.abbreviatedName}`;
       if (packageName.startsWith(word)) {
-        return packageName.replace(word, `GoogleAppsScript.${definition.id}.`);
+        return packageName.replace(word, `${definition.id}.`);
       } else if (packageName.startsWith(definition.abbreviatedName)) {
         return packageName.replace(definition.abbreviatedName, "");
       }
