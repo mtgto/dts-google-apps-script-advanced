@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import { definitions } from "./api";
 import wordwrap from "word-wrap";
+import debug from "debug";
 
 type Dict = { [key: string]: any };
 
@@ -25,11 +26,7 @@ class Namespace {
       this.interfaces.push(i);
     } else if (this.package.length + 1 < i.package.length) {
       const childName = i.package[this.package.length];
-      // console.log(
-      //   `[DEBUG] childName=${childName}, fullname=${i.package.join(
-      //     "."
-      //   )}, children = ${this.children.map((c) => c.name)}`
-      // );
+      debug(`[DEBUG] childName=${childName}, fullname=${i.package.join(".")}, children = ${this.children.map((c) => c.name)}`);
       let child = this.children.find((child) => child.name === childName);
       if (!child) {
         child = new Namespace([...this.package, childName].join("."));
@@ -192,14 +189,14 @@ const unknownTypeNames: { [unknownName: string]: string } = {
  * "Admin_directory_v1.Admin.Directory_v1.Collection" => "AdminDirectory.Collection"
  * "Admin.Directory_v1.Schema.Channel" => "Schema.Channel"
  */
-const normalizePackageName = (packageName: string): string | undefined => {
+const normalizePackageName = (packageName: string, isRelative: boolean): string | undefined => {
   for (const definition of definitions) {
     if (packageName === definition.innerName) {
       return definition.id;
     } else {
       const word = `${definition.innerName}.${definition.abbreviatedName}`;
       if (packageName.startsWith(word)) {
-        return packageName.replace(word, `${definition.id}.`);
+        return packageName.replace(word, isRelative ? `GoogleAppsScript.${definition.id}.` : `${definition.id}.`);
       } else if (packageName.startsWith(definition.abbreviatedName)) {
         return packageName.replace(definition.abbreviatedName, "");
       }
@@ -208,7 +205,7 @@ const normalizePackageName = (packageName: string): string | undefined => {
   return undefined;
 };
 
-const normalizeTypeName = (typeName: string): string => {
+const normalizeTypeName = (typeName: string, isRelative: boolean): string => {
   if (typeName === "Integer") {
     return "number";
   } else if (typeName === "Integer[]") {
@@ -243,7 +240,7 @@ const normalizeTypeName = (typeName: string): string => {
       return converted;
     }
   }
-  const normalizedName = normalizePackageName(typeName);
+  const normalizedName = normalizePackageName(typeName, isRelative);
   if (normalizedName) {
     return normalizedName;
   } else {
@@ -252,14 +249,14 @@ const normalizeTypeName = (typeName: string): string => {
 };
 
 const parseHierarchy = (obj: Dict): Interface => {
-  const name = normalizeTypeName(obj["1"]);
+  const name = normalizeTypeName(obj["1"], false);
   const fields: Field[] = (obj["2"] ?? []).map(
     (field: Dict): Field => {
       let name: string = field["1"];
       if (name.includes("-")) {
         name = `"${name}"`;
       }
-      const typeName = normalizeTypeName(field["2"]);
+      const typeName = normalizeTypeName(field["2"], true);
       const comment = field["6"] ? new Comment(field["6"]) : undefined;
       return new Field(name, typeName, comment);
     }
@@ -267,10 +264,10 @@ const parseHierarchy = (obj: Dict): Interface => {
   const methods = (obj["3"] ?? []).map(
     (method: Dict): Method => {
       const name = normalizeVariableName(method["1"]);
-      const returnTypeName = normalizeTypeName(method["2"]);
+      const returnTypeName = normalizeTypeName(method["2"], true);
       const args = (method["3"] ?? []).map((field: Dict) => {
         const name = normalizeVariableName(field["1"]);
-        const typeName = normalizeTypeName(field["2"]);
+        const typeName = normalizeTypeName(field["2"], true);
         const comment = field["6"] ? new Comment(field["6"]) : undefined;
         return new Field(name, typeName, comment);
       });
