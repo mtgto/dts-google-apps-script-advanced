@@ -9,14 +9,18 @@ Inspire from [motemen/dts-google-apps-script](https://github.com/motemen/dts-goo
 
 Require `node.js` and `TypeScript`.
 
-You need to download JSON file for autocomplete.
-
 ```console
-$ tsc index.ts
-$ node index.js gas-advanced-service-definition-for-autocomplete.json
+$ yarn install
+$ yarn run build
+
+# Parse an API json file
+$ node ./dist/index.js parse ./definitions/youtube_v3.json
+
+# Write API json files to destinations
+$ node ./dist/index.js convert -o /path/to/export/directory definitions/*.json
 ```
 
-# How To Download `gas-advanced-service-definition-for-autocomplete.json`
+# How To Download `(gas-advanced-service-definition-for-autocomplete).json`
 
 1. Open editor of Google Apps Script.
 1. [Enable Advanced Service](https://developers.google.com/apps-script/guides/services/advanced#enabling_advanced_services) you want to download in menu.
