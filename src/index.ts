@@ -46,6 +46,8 @@ program
           "// Generator: https://github.com/grant/google-apps-script-dts",
           "// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped",
           "",
+          "/// <reference path=\"../google-apps-script.base.d.ts\" />",
+          "",
           "",
         ].join("\n");
         definition += await parse(jsonFile);

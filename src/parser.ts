@@ -204,12 +204,8 @@ const normalizePackageName = (packageName: string): string | undefined => {
 };
 
 const normalizeTypeName = (typeName: string): string => {
-  if (typeName === "Blob" || typeName === "void") {
+  if (typeName === "void" || typeName === "Integer" || typeName === "Integer[]" || typeName === "Byte[]") {
     return typeName;
-  } else if (typeName === "Integer") {
-    return "number";
-  } else if (typeName === "Integer[]") {
-    return "number[]";
   } else if (typeName === "Number") {
     return "number";
   } else if (typeName === "Number[]") {
@@ -220,8 +216,6 @@ const normalizeTypeName = (typeName: string): string => {
     return "string[]";
   } else if (typeName === "String[][]") {
     return "string[][]";
-  } else if (typeName === "Byte[]") {
-    return "string";
   } else if (typeName === "Boolean") {
     return "boolean";
   } else if (typeName === "Boolean[]") {
@@ -232,6 +226,8 @@ const normalizeTypeName = (typeName: string): string => {
     return "object[]";
   } else if (typeName === "Object[][]") {
     return "object[][]";
+  } else if (typeName === "Blob") {
+    return "Base.Blob";
   } else {
     const converted = unknownTypeNames[typeName];
     if (converted) {
