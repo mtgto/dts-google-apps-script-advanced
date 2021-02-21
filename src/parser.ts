@@ -154,8 +154,6 @@ const normalizeVariableName = (varName: string): string => {
   return varName.replace(/(\w+)-(\w)(\w+)/, (_match, former, char, latter) => former + char.toUpperCase() + latter);
 };
 
-const validTypeNames = ["Blob", "void"];
-
 // Unknown types which defined in automatic macros
 const unknownTypeNames: { [unknownName: string]: string } = {
   "Area120tables.V1alpha1.Schema.Empty": "any",
@@ -189,14 +187,14 @@ const unknownTypeNames: { [unknownName: string]: string } = {
  * "Admin_directory_v1.Admin.Directory_v1.Collection" => "AdminDirectory.Collection"
  * "Admin.Directory_v1.Schema.Channel" => "Schema.Channel"
  */
-const normalizePackageName = (packageName: string, isRelative: boolean): string | undefined => {
+const normalizePackageName = (packageName: string): string | undefined => {
   for (const definition of definitions) {
     if (packageName === definition.innerName) {
       return definition.id;
     } else {
       const word = `${definition.innerName}.${definition.abbreviatedName}`;
       if (packageName.startsWith(word)) {
-        return packageName.replace(word, isRelative ? `GoogleAppsScript.${definition.id}.` : `${definition.id}.`);
+        return packageName.replace(word, "");
       } else if (packageName.startsWith(definition.abbreviatedName)) {
         return packageName.replace(definition.abbreviatedName, "");
       }
@@ -205,8 +203,10 @@ const normalizePackageName = (packageName: string, isRelative: boolean): string 
   return undefined;
 };
 
-const normalizeTypeName = (typeName: string, isRelative: boolean): string => {
-  if (typeName === "Integer") {
+const normalizeTypeName = (typeName: string): string => {
+  if (typeName === "Blob" || typeName === "void") {
+    return typeName;
+  } else if (typeName === "Integer") {
     return "number";
   } else if (typeName === "Integer[]") {
     return "number[]";
@@ -232,15 +232,13 @@ const normalizeTypeName = (typeName: string, isRelative: boolean): string => {
     return "object[]";
   } else if (typeName === "Object[][]") {
     return "object[][]";
-  } else if (validTypeNames.includes(typeName)) {
-    return typeName;
   } else {
     const converted = unknownTypeNames[typeName];
     if (converted) {
       return converted;
     }
   }
-  const normalizedName = normalizePackageName(typeName, isRelative);
+  const normalizedName = normalizePackageName(typeName);
   if (normalizedName) {
     return normalizedName;
   } else {
@@ -249,14 +247,14 @@ const normalizeTypeName = (typeName: string, isRelative: boolean): string => {
 };
 
 const parseHierarchy = (obj: Dict): Interface => {
-  const name = normalizeTypeName(obj["1"], false);
+  const interfaceName = normalizeTypeName(obj["1"]);
   const fields: Field[] = (obj["2"] ?? []).map(
     (field: Dict): Field => {
       let name: string = field["1"];
       if (name.includes("-")) {
         name = `"${name}"`;
       }
-      const typeName = normalizeTypeName(field["2"], true);
+      const typeName = normalizeTypeName(field["2"]);
       const comment = field["6"] ? new Comment(field["6"]) : undefined;
       return new Field(name, typeName, comment);
     }
@@ -264,10 +262,10 @@ const parseHierarchy = (obj: Dict): Interface => {
   const methods = (obj["3"] ?? []).map(
     (method: Dict): Method => {
       const name = normalizeVariableName(method["1"]);
-      const returnTypeName = normalizeTypeName(method["2"], true);
+      const returnTypeName = normalizeTypeName(method["2"]);
       const args = (method["3"] ?? []).map((field: Dict) => {
         const name = normalizeVariableName(field["1"]);
-        const typeName = normalizeTypeName(field["2"], true);
+        const typeName = normalizeTypeName(field["2"]);
         const comment = field["6"] ? new Comment(field["6"]) : undefined;
         return new Field(name, typeName, comment);
       });
@@ -276,7 +274,7 @@ const parseHierarchy = (obj: Dict): Interface => {
     }
   );
   const comment = obj["6"] ? new Comment(obj["6"]) : undefined;
-  return new Interface(`GoogleAppsScript.${name}`, fields, methods, comment);
+  return new Interface(`GoogleAppsScript.${interfaceName}`, fields, methods, comment);
 };
 
 export const parse = async (filename: string): Promise<string> => {
