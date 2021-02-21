@@ -7,12 +7,9 @@ Inspire from [motemen/dts-google-apps-script](https://github.com/motemen/dts-goo
 
 # How To Generate
 
-Require `node.js` and `TypeScript`.
+Require `Node.js`.
 
 ```console
-$ yarn install
-$ yarn run build
-
 # Parse an API json file
 $ node ./dist/index.js parse ./definitions/youtube_v3.json
 

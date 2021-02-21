@@ -10,7 +10,7 @@
   "scripts": {
     "build": "yarn run build:dev",
     "build:dev": "yarn run build:base --define:process.env.NODE_ENV=\\\"development\\\"",
-    "build:prod": "yarn run build:base --define:process.env.NODE_ENV=\\\"production\\\"",
+    "build:prod": "yarn run build:base --define:process.env.NODE_ENV=\\\"production\\\" --minify",
     "build:base": "esbuild src/index.ts --bundle --platform=node --target=node14 --outdir=./dist --sourcemap=external",
     "watch": "yarn run build --watch",
     "lint": "tsc --noEmit",

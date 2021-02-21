@@ -41,9 +41,9 @@ program
         console.log(`${index + 1}: Converting ${jsonFile}`);
         const outputFile = path.join(output, path.basename(jsonFile, ".json") + ".d.ts");
         let definition = [
-          "// Type definitions for Google Apps Script 2019-03-25",
+          "// Type definitions for Google Apps Script 2021-02-11",
           "// Project: https://developers.google.com/apps-script/",
-          "// Generator: https://github.com/grant/google-apps-script-dts",
+          "// Generator: https://github.com/mtgto/dts-google-apps-script-advanced",
           "// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped",
           "",
           "",
