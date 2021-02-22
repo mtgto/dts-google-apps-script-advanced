@@ -145,7 +145,7 @@ class Comment {
   toString = (depth: number): string => {
     return wordwrap(this.comment, { indent: "", width: 120 })
       .split("\n")
-      .map((line) => "  ".repeat(depth) + "// " + line.trimEnd() + "\n")
+      .map((line) => ("  ".repeat(depth) + "// " + line).trimEnd() + "\n")
       .join("");
   };
 }
@@ -160,17 +160,22 @@ const unknownTypeNames: { [unknownName: string]: string } = {
   "Bigquery.V2.Schema.JsonObject": "any",
   "Classroom.V1.Schema.Empty": "void",
   "Classroom.V1.Schema.ReclaimStudentSubmissionRequest": "any",
+  "Classroom.V1.Schema.ReturnStudentSubmissionRequest": "any",
+  "Classroom.V1.Schema.TurnInStudentSubmissionRequest": "any",
   "Docs.V1.Schema.EmbeddedDrawingProperties": "any",
-  "Driveactivity.V2.Schema.Edit": "any",
+  "Docs.V1.Schema.EmbeddedDrawingPropertiesSuggestionState": "any",
   "Driveactivity.V2.Schema.Administrator": "any",
   "Driveactivity.V2.Schema.AnonymousUser": "any",
+  "Driveactivity.V2.Schema.Anyone": "any",
+  "Driveactivity.V2.Schema.DeletedUser": "any",
+  "Driveactivity.V2.Schema.DriveFile": "any",
+  "Driveactivity.V2.Schema.Edit": "any",
+  "Driveactivity.V2.Schema.File": "any",
   "Driveactivity.V2.Schema.Legacy": "any",
   "Driveactivity.V2.Schema.NoConsolidation": "any",
   "Driveactivity.V2.Schema.New": "any",
+  "Driveactivity.V2.Schema.UnknownUser": "any",
   "Driveactivity.V2.Schema.Upload": "any",
-  "Driveactivity.V2.Schema.DriveFile": "any",
-  "Driveactivity.V2.Schema.File": "any",
-  "Driveactivity.V2.Schema.Anyone": "any",
   "Licensing.V1.Schema.Empty": "void",
   "Peopleapi.V1.Schema.Empty": "void",
   "Sheets.V4.Schema.ClearValuesRequest": "any",
@@ -187,14 +192,14 @@ const unknownTypeNames: { [unknownName: string]: string } = {
  * "Admin_directory_v1.Admin.Directory_v1.Collection" => "AdminDirectory.Collection"
  * "Admin.Directory_v1.Schema.Channel" => "Schema.Channel"
  */
-const normalizePackageName = (packageName: string): string | undefined => {
+export const normalizePackageName = (packageName: string, abbreviateApiName: boolean): string | undefined => {
   for (const definition of definitions) {
     if (packageName === definition.innerName) {
       return definition.id;
     } else {
       const word = `${definition.innerName}.${definition.abbreviatedName}`;
       if (packageName.startsWith(word)) {
-        return packageName.replace(word, "");
+        return packageName.replace(word, abbreviateApiName ? "" : definition.id + ".");
       } else if (packageName.startsWith(definition.abbreviatedName)) {
         return packageName.replace(definition.abbreviatedName, "");
       }
@@ -203,7 +208,7 @@ const normalizePackageName = (packageName: string): string | undefined => {
   return undefined;
 };
 
-const normalizeTypeName = (typeName: string): string => {
+const normalizeTypeName = (typeName: string, abbreviateApiName: boolean): string => {
   if (typeName === "void" || typeName === "Integer" || typeName === "Integer[]" || typeName === "Byte[]") {
     return typeName;
   } else if (typeName === "Number") {
@@ -234,7 +239,7 @@ const normalizeTypeName = (typeName: string): string => {
       return converted;
     }
   }
-  const normalizedName = normalizePackageName(typeName);
+  const normalizedName = normalizePackageName(typeName, abbreviateApiName);
   if (normalizedName) {
     return normalizedName;
   } else {
@@ -242,15 +247,16 @@ const normalizeTypeName = (typeName: string): string => {
   }
 };
 
-const parseHierarchy = (obj: Dict): Interface => {
-  const interfaceName = normalizeTypeName(obj["1"]);
+export const parseHierarchy = (obj: Dict): Interface => {
+  const interfaceName = normalizeTypeName(obj["1"], false);
+  const isApiName = definitions.some(definition => definition.id === interfaceName);
   const fields: Field[] = (obj["2"] ?? []).map(
     (field: Dict): Field => {
       let name: string = field["1"];
       if (name.includes("-")) {
         name = `"${name}"`;
       }
-      const typeName = normalizeTypeName(field["2"]);
+      const typeName = normalizeTypeName(field["2"], !isApiName);
       const comment = field["6"] ? new Comment(field["6"]) : undefined;
       return new Field(name, typeName, comment);
     }
@@ -258,10 +264,10 @@ const parseHierarchy = (obj: Dict): Interface => {
   const methods = (obj["3"] ?? []).map(
     (method: Dict): Method => {
       const name = normalizeVariableName(method["1"]);
-      const returnTypeName = normalizeTypeName(method["2"]);
+      const returnTypeName = normalizeTypeName(method["2"], !isApiName);
       const args = (method["3"] ?? []).map((field: Dict) => {
         const name = normalizeVariableName(field["1"]);
-        const typeName = normalizeTypeName(field["2"]);
+        const typeName = normalizeTypeName(field["2"], !isApiName);
         const comment = field["6"] ? new Comment(field["6"]) : undefined;
         return new Field(name, typeName, comment);
       });
@@ -285,7 +291,11 @@ export const parse = async (filename: string): Promise<string> => {
     root.add(parseHierarchy(cls));
   });
 
-  let output = root.toString(0);
+  let output = "";
+  if ([""].includes(main.name)) {
+    output += "/// <reference path=\"../google-apps-script.base.d.ts\" />\n\n";
+  }
+  output += root.toString(0);
   output += `declare const ${main.name}: GoogleAppsScript.${main.name};\n`;
   return output;
 };
