@@ -3,6 +3,8 @@ import { definitions } from "./api";
 import wordwrap from "word-wrap";
 import debug from "debug";
 
+const tabWidth = 4; // defined prettierrc.json in DefinitelyTyped.
+
 type Dict = { [key: string]: any };
 
 /// Namespace
@@ -38,7 +40,7 @@ class Namespace {
 
   toString = (depth: number = 0): string => {
     let output = depth === 0 ? "declare " : "";
-    output += "  ".repeat(depth);
+    output += " ".repeat(tabWidth * depth);
     output += "namespace " + this.name + " {\n";
     this.children.forEach((child) => {
       output += child.toString(depth + 1);
@@ -46,7 +48,7 @@ class Namespace {
     this.interfaces.forEach((i) => {
       output += i.toString(depth + 1);
     });
-    output += "  ".repeat(depth) + "}\n";
+    output += " ".repeat(tabWidth * depth) + "}\n";
 
     return output;
   };
@@ -70,7 +72,7 @@ class Interface {
   }
 
   toString = (depth: number = 0): string => {
-    const indent = "  ".repeat(depth);
+    const indent = " ".repeat(tabWidth * depth);
     let output = "";
     if (this.comment) {
       output += this.comment.toString(depth);
@@ -101,7 +103,7 @@ class Method {
   }
 
   toString = (depth: number): string => {
-    const indent = "  ".repeat(depth);
+    const indent = " ".repeat(tabWidth * depth);
     let output = "";
     if (this.comment) {
       output += this.comment.toString(depth);
@@ -125,7 +127,7 @@ class Field {
   }
 
   toString = (depth: number): string => {
-    const indent = "  ".repeat(depth);
+    const indent = " ".repeat(tabWidth * depth);
     let output = "";
     if (this.comment) {
       output += this.comment.toString(depth);
@@ -145,7 +147,7 @@ class Comment {
   toString = (depth: number): string => {
     return wordwrap(this.comment, { indent: "", width: 120 })
       .split("\n")
-      .map((line) => ("  ".repeat(depth) + "// " + line).trimEnd() + "\n")
+      .map((line) => (" ".repeat(tabWidth * depth) + "// " + line).trimEnd() + "\n")
       .join("");
   };
 }
